@@ -22,29 +22,31 @@ IDEmodel <- IDE(f = z ~ s1 + s2,
                 kernel_basis = NULL,
                 grid_size = 41)
 
-fit_results <- fit.IDE(IDEmodel)
+#fit_results <- fit.IDE(IDEmodel)
+load("./2_Prediction.rda")
+show_kernel(fit_results$IDEmodel)
 
-# ## Prediction grid
-# s1_pred <- s2_pred <- seq(0,1,length.out = 71)
-# st_grid <- expand.grid(s1 = s1_pred,
-#                       s2 = s2_pred,
-#                       date = unique(time(SIM$z_STIDF))) %>%
-#            mutate(t = lubridate::day(date))
-# pred_grid <- STIDF(sp = SpatialPoints(st_grid[,c("s1","s2")]),
-#                  time = st_grid$date,
-#                  data = st_grid %>% select(-s1, -s2, -date))
-#
-# ## Predict using prior guesses
-# ST_grid_df <- predict(IDEmodel,
-#                       newdata = pred_grid) %>%
-#               as.data.frame()
-#
-# gpred <- ggplot(ST_grid_df) + geom_tile(aes(s1,s2,fill=Ypred)) + facet_wrap(~t) +
-#   scale_fill_distiller(palette="Spectral", limits = c(-0.1,1.1)) +
-#   coord_fixed(xlim=c(0,1), ylim = c(0,1))
-# gpredse <- ggplot(ST_grid_df) + geom_tile(aes(s1,s2,fill=Ypredse)) + facet_wrap(~t) +
-#   scale_fill_distiller(palette="Spectral") +
-#   coord_fixed(xlim=c(0,1), ylim = c(0,1))
+## Prediction grid
+s1_pred <- s2_pred <- seq(0,1,length.out = 71)
+st_grid <- expand.grid(s1 = s1_pred,
+                      s2 = s2_pred,
+                      date = unique(time(SIM$z_STIDF))) %>%
+           mutate(t = lubridate::day(date))
+pred_grid <- STIDF(sp = SpatialPoints(st_grid[,c("s1","s2")]),
+                 time = st_grid$date,
+                 data = st_grid %>% select(-s1, -s2, -date))
+
+## Predict using prior guesses
+ST_grid_df <- predict(IDEmodel,
+                      newdata = pred_grid) %>%
+              as.data.frame()
+
+gpred <- ggplot(ST_grid_df) + geom_tile(aes(s1,s2,fill=Ypred)) + facet_wrap(~t) +
+  scale_fill_distiller(palette="Spectral", limits = c(-0.1,1.1)) +
+  coord_fixed(xlim=c(0,1), ylim = c(0,1))
+gpredse <- ggplot(ST_grid_df) + geom_tile(aes(s1,s2,fill=Ypredse)) + facet_wrap(~t) +
+  scale_fill_distiller(palette="Spectral") +
+  coord_fixed(xlim=c(0,1), ylim = c(0,1))
 # arrangeGrob(SIM$g_obs, SIM$g_truth, gpredse, gpred, ncol = 2) %>% plot()
 #
 # ## Optimise log likelihood

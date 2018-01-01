@@ -1,37 +1,16 @@
 library("STRbook")
-library("FRK")
-library("sp")
-library("DEoptim")
 library("dplyr")
-library("tidyr")
 library("ggplot2")
-library("Matrix")
-library("gridExtra")
+library("sp")
 library("spacetime")
 devtools::load_all("..")
 
 rm(list=ls())
 #source("IDEfunctions.R")
 
-s_grid <- expand.grid(s2 = seq(98.75,length.out = 40, by = -2.5),
-                      s1 = seq(1.25,length.out = 28, by = 2.5))
-s_df <- NULL
-
-time <- seq(as.POSIXct("2000-11-03 08:25:00", tz = "UTC"),
-             length.out = 12,
-             by = as.difftime(10, units = "mins"))
-for(i in 1:12) {
-    X <- read.table(paste0("../../data/radar/Z",i,".dat"))
-    new_df <- cbind(s_grid, t = time[i], z = as.numeric(as.matrix(X)))
-    s_df <- rbind(s_df, new_df)
-}
-
-data_STIDF <- STIDF(sp = s_df[,1:2] %>% SpatialPoints(),
-                    time = s_df$t,
-                    data = s_df %>% select(z))
-
+data("radar_STIDF")
 IDEmodel <- IDE(f = z ~ 1,
-                data = data_STIDF,
+                data = radar_STIDF,
                 dt = as.difftime(10, units = "mins"),
                 process_basis = NULL,
                 kernel_basis = NULL,
