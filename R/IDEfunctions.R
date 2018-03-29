@@ -57,7 +57,7 @@ IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_siz
         Q <<- construct_Q(Q_eta, M, T)
         if(max(abs(eigen(M)$values)) < 2) { # safegaurd against blow-up
           Qpost <<- crossprod(chol(Q_eps) %*% PHI_obs) + Q
-          Qpostchol <<- FRK:::cholPermute(Qpost)
+          Qpostchol <<- cholPermute(Qpost)
           update_betahat()
           update_alpha()
         }
@@ -95,7 +95,7 @@ IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_siz
   }
 
   update_alpha <- function() {
-    alphahat <<-  FRK:::cholsolve(Q = Qpost,
+    alphahat <<-  cholsolve(Q = Qpost,
                                   y = t(PHI_obs) %*% Q_eps %*% (Z - X_obs %*% betahat),
                                   perm = TRUE,
                                   cholQp = Qpostchol$Qpermchol,
@@ -105,7 +105,7 @@ IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_siz
   #update_beta <- function(X_obs, PHI_obs, Q_eps, Qpost_cholsolve, Z) {
   update_betahat <- function() {
     Qpost_cholsolve <- function(y) {
-      FRK:::cholsolve(Q = Qpost,
+      cholsolve(Q = Qpost,
                       y = y,
                       perm = TRUE,
                       cholQp = Qpostchol$Qpermchol,
@@ -127,7 +127,7 @@ IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_siz
        all(sapply(3:length(k), function(i) all(abs(k[[i]]) < axis_ranges[i-2])))) {
       Ztilde <- Z - X_obs %*% betahat
 
-      Qchol <- FRK:::cholPermute(Q)
+      Qchol <- cholPermute(Q)
       -((0.5*logdet(Qchol$Qpermchol) +
            0.5*logdet(chol(Q_eps)) -
            0.5*logdet(Qpostchol$Qpermchol) -
@@ -314,8 +314,8 @@ predict.IDE <- function(object, newdata = NULL, covariances = FALSE) {
   X_pred <- model.matrix(f, newdata)
   newdata$Ypred <- (X_pred %*% betahat + PHI_pred %*% alphahat) %>% as.numeric()
   Qpost_dense <- densify(Qpost,t(PHI_pred) %*% PHI_pred)
-  Qpostchol <- FRK:::cholPermute(Qpost_dense)
-  Ssparseinv <- FRK:::Takahashi_Davis(Q = Qpost_dense,
+  Qpostchol <- cholPermute(Qpost_dense)
+  Ssparseinv <- Takahashi_Davis(Q = Qpost_dense,
                                       cholQp = Qpostchol$Qpermchol,
                                       P = Qpostchol$P)
   newdata$Ypredse <- rowSums(PHI_pred * (PHI_pred %*% Ssparseinv)) %>%
@@ -323,7 +323,7 @@ predict.IDE <- function(object, newdata = NULL, covariances = FALSE) {
   if(covariances == TRUE) {
     if(nrow(PHI_pred) > 4000)
       stop("Cannot generate covariances for more than 4000 locations")
-    S <- FRK:::cholsolveAQinvAT(PHI_pred,
+    S <- cholsolveAQinvAT(PHI_pred,
                                 Lp = Qpostchol$Qpermchol,
                                 P = Qpostchol$P)
     newdata <- list(newdata = newdata,

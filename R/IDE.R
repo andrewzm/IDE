@@ -26,6 +26,7 @@
 #' @import dplyr
 #' @import FRK
 #' @import DEoptim
+#' @import sparseinv
 #' @importFrom tidyr gather spread
 #' @importFrom stats .getXlevels coefficients dist kmeans lm median model.extract model.frame model.matrix na.fail optim runif sd terms var time rnorm formula
 #' @importFrom utils data
