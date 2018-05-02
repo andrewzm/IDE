@@ -293,13 +293,12 @@ fit.IDE <- function(object, method = "DEoptim", ...) {
               rep(P$k4[2], nk[4]),
               log(P$sigma2_eps[2]), log(P$sigma2_eta[2]))
 
+    ## Bring functions into local environment for DEoptim
     O <- DEoptim(fn = optimfun,
                  lower = lower,
                  upper = upper,
-                 control = c(list(packages = c("Matrix","FRK", "sp", "dplyr", "IDE"),
-                                parVar = c("IDEmodel","construct_kernel",
-                                           "repcol", "construct_Q","Zeromat",
-                                           "logdet", "find_Qo", "vec_to_list")),...),
+                 control = c(list(packages = c("Matrix","FRK",
+                                               "sp", "dplyr", "IDE")),...),
                  IDEmodel = object)
     theta <- O$optim$bestmem
   } else {
@@ -459,13 +458,20 @@ show_kernel <- function(IDEmodel, scale = 1) {
   }
 }
 
+#' @title Create a single, constant basis function
+#' @description Constructs an object of class \code{Basis} as defined in \code{FRK} that is constant over the entire spatial domain.
+#' @return Object of class \code{Basis}
+#' @seealso \code{\link{IDE}} for how to use basis functions to construct the IDE kernel
+#' @export
+#' @examples
+#' basis1 <- constant_basis()
 constant_basis <- function() {
-   new("Basis",
-       manifold = plane(),
-       fn = list(function(s) rep(1, nrow(s))),
-       pars = list(),
-       df = data.frame(),
-       n = 1)
+  new("Basis",
+      manifold = plane(),
+      fn = list(function(s) rep(1, nrow(s))),
+      pars = list(),
+      df = data.frame(),
+      n = 1)
 }
 
 #' @title Simulate datasets from the IDE model
@@ -694,7 +700,6 @@ construct_kernel <- function(Basis, ki) {
     }
   }
 }
-
 
 
 Zeromat <- function (ni, nj = NULL)

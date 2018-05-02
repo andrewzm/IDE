@@ -3,6 +3,7 @@
 S3method(coef,IDE)
 S3method(predict,IDE)
 export(IDE)
+export(constant_basis)
 export(fit.IDE)
 export(show_kernel)
 export(simIDE)

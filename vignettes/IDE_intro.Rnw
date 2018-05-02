@@ -149,6 +149,7 @@ In this vignette we use the package {\bf IDE} to fit spatio-temporal IDE models,
 library("dplyr")
 library("FRK")
 library("ggplot2")
+library("IDE")
 library("sp")
 library("spacetime")
 @
