@@ -1,4 +1,58 @@
+# IDE: An R Software package for implementing integro-difference
+# equation models
+# Copyright (c) 2017 University of Wollongong
+# Author: Andrew Zammit-Mangion, azm (at) uow.edu.au
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+#' @name IDE
+#' @title Construct IDE object, fit and predict
+#' @description The integro-difference equation (IDE) model is constructed using the function \code{IDE}, fitted using the function \code{IDE.fit} and used for prediction using the function \code{predict}.
+#'
+#'
+#' @param f \code{R} formula relating the dependent variable (or transformations thereof) to covariates
+#' @param data data object of class \code{STIDF}
+#' @param dt object of class \code{difftime} identifying the temporal discretisation used in the model
+#' @param process_basis object of class \code{Basis} as defined in the package \code{FRK}
+#' @param kernel_basis a list of four objects of class \code{Basis} as defined in the package \code{FRK}. The first correspondes to the spatial decomposition of the kernel amplitude, the second to the kernel aperture, the third to the kernel horizontal offset, and the fourth to the kernel vertical offset. If left \code{NULL}, a spatially-invariant kernel is assumed
+#' @param grid_size an integer identifying the number of grid points to use (in one dimension) for numerical integrations
+#' @param forecast an integer indicating the number of steps to forecast (where each step corresponds to one \code{difftime})
+#' @param hindcast an integer indicating the number of steps to hindcast (where each step corresponds to one \code{difftime})
+#' @param object object of class \code{IDE} to for fitting or predicting
+#' @param method method used to estimate the parameters. Currently only \code{"DEoptim"} is allowed, which calls a genetic algorithm from the package \code{DEoptim}
+#' @param newdata data frame or object of class \code{STIDF} containing the spatial and temporal points at which to predict
+#' @param covariances a flag indicating whether prediction covariances should be returned or not when predicting
+#' @param ... other parameters passed to \code{DEoptim} or \code{predict}
+#' @details The first-order spatio-temporal IDE process model used in the package \code{IDE} is given by \deqn{Y_t(s) = \int_{D_s} m(s,x;\theta_p) Y_{t-1}(x) \; dx  + \eta_t(s); \;\;\; s,x \in D_s,} for \eqn{t=1,2,\ldots}, where \eqn{m(s,x;\theta_p)} is a transition kernel, depending on parameters \eqn{\theta_p} that specify ``redistribution weights'' for the process at the previous time over the spatial domain, \eqn{D_s}, and \eqn{\eta_t(s)} is a time-varying (but statistically independent in time) continuous mean-zero Gaussian spatial process.  It is assumed that the parameter vector \eqn{\theta_p} does not vary with time.  In general, \eqn{\int_{D_s} m(s,x;\theta_p) d x < 1} for the process to be stable (non-explosive) in time.
+#'
+#' The redistribution kernel \eqn{m(s,x;\theta_p)} used by the package \code{IDE} is given by \deqn{m(s,x;\theta_p) = {\theta_{p,1}(s)} \exp\left(-\frac{1}{\theta_{p,2}(s)}\left[(x_1 - \theta_{p,3}(s) - s_1)^2 + (x_2 - \theta_{p,4}(s) - s_2)^2 \right] \right),}
+#' where the spatially-varying kernel amplitude is given by \eqn{\theta_{p,1}(s)} and controls the temporal stationarity, the spatially-varying length-scale (variance) parameter \eqn{\theta_{p,2}(s)} corresponds to a kernel scale (aperture) parameter (i.e., the kernel width increases as \eqn{\theta_{p,2}} increases), and the mean (shift) parameters \eqn{\theta_{p,3}(s)} and \eqn{\theta_{p,4}(s)} correspond to a spatially-varying shift of the kernel relative to location $s$. Spatially-invariant kernels (i.e., where the elements of \eqn{\theta_p} are not functions of space) are assumed by default. The spatial dependence, if present, is modelled using a basis-function decomposition.
+#'
+#'\code{IDE.fit()} takes an object of class \code{IDE} and estimates all unknown parameters, namely the parameters \eqn{theta} and the measurement-error variance, using maximum likelihood. The only method currently used is the genetic algorithm in the package \code{DEoptim}. This has been seen to work well on several simulation and real-application studies on multi-core machines.
+#'
+#'Once the parameters are fitted, the \code{IDE} object is passed onto the function \code{predict()} in order to carry out optimal predictions over some prediction spatio-temporal locations. If no locations are specified, the spatial grid used for discretising the integral at every time point in the data horizon are used. The function \code{predict} returns a data frame in long format. Change-of-support is currently no supported.
+#' @return Object of class \code{IDE} that contains \code{get} and \code{set} functions for retrieving and setting internal parameters, the function \code{update_alpha} which predicts the latent states, \code{update_beta} which estimates the regresson coefficients based on the current predictions for alpha, and \code{negloglik}, which computes the negative log-likelihood.
+#' @seealso \code{\link{show_kernel}} for plotting the kernel
 #' @export
+#' @examples
+#' \dontrun{
+#' SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 1)
+#' IDEmodel <- IDE(f = z ~ s1 + s2,
+#'                 data = SIM1$z_STIDF,
+#'                 dt = as.difftime(1, units = "days"),
+#'                 grid_size = 41)
+#' fit_results_sim1 <- fit.IDE(IDEmodel,
+#'                             parallelType = 1)
+#' ST_grid_df <- predict(fit_results_sim1$IDEmodel)
+#' }
 IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_size = 41, forecast = 0, hindcast = 0) {
 
   if(!is(f,"formula"))
@@ -71,7 +125,6 @@ IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_siz
            "Q_eps" = Q_eps,
            "Q_eta" = Q_eta,
            "alphahat" = alphahat,
-           "alphavar" = alphavar,
            "betahat" = betahat,
            "coordnames" = coordnames,
            "data" = data,
@@ -205,6 +258,7 @@ IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_siz
 }
 
 #' @export
+#' @rdname IDE
 fit.IDE <- function(object, method = "DEoptim", ...) {
 
   ## Optimise log likelihood
@@ -223,7 +277,7 @@ fit.IDE <- function(object, method = "DEoptim", ...) {
     IDEmodel$negloglik()
   }
 
-  P <- IDEmodel$get("plausible_ranges")
+  P <- object$get("plausible_ranges")
 
 
   if(method == "DEoptim") {
@@ -252,7 +306,7 @@ fit.IDE <- function(object, method = "DEoptim", ...) {
     stop("Only DEoptim implemented for now")
   }
 
-  nk <- IDEmodel$get("nk")
+  nk <- object$get("nk")
   p <- length(theta)
   sigma2_eps <- exp(theta[p-1])
   sigma2_eta <- exp(theta[p])
@@ -260,16 +314,17 @@ fit.IDE <- function(object, method = "DEoptim", ...) {
   ki <- vec_to_list(ki, nk)
   ki[[1]] <- ki[[1]]*1000
   ki[[2]] <- exp(ki[[2]]*10)
-  IDEmodel$set(k =  ki,
-               sigma2_eps = sigma2_eps,
-               sigma2_eta = sigma2_eta)
+  object$set(k =  ki,
+             sigma2_eps = sigma2_eps,
+             sigma2_eta = sigma2_eta)
 
   list(optim_results = O,
        IDEmodel = object)
 }
 
 #' @export
-predict.IDE <- function(object, newdata = NULL, covariances = FALSE) {
+#' @rdname IDE
+predict.IDE <- function(object, newdata = NULL, covariances = FALSE, ...) {
   alphahat <- object$get("alphahat")
   betahat <- object$get("betahat")
   coordnames <- object$get("coordnames")
@@ -332,7 +387,16 @@ predict.IDE <- function(object, newdata = NULL, covariances = FALSE) {
   newdata
 }
 
+#' @title Retrieve estimated regression coefficients
+#' @description Takes a an object of class \code{IDE} and returns a numeric vector with the estimated regression coefficients.
+#' @param object object of class \code{IDE}
+#' @param ... currently unused
 #' @export
+#' @method coef IDE
+#' @seealso \code{\link{IDE}} for more information on how to construct and fit an IDE model.
+#' @examples
+#' SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 1)
+#' coef(SIM1$IDEmodel)
 coef.IDE <- function(object, ...) {
   coeff <- as.numeric(object$get("betahat"))
   varnames <- all.vars(object$get("f"))[-1]
@@ -344,8 +408,21 @@ coef.IDE <- function(object, ...) {
   coeff
 }
 
+#' @title Show IDE kernel
+#' @description Plotting function for visualising the IDE kernel.
+#' @param IDEmodel object of class \code{IDE}
+#' @param scale factor by which to scale the arrows when visualising a spatially-varying kernel
+#' @details The function \code{show_kernel} adapts its behaviour to the type of kernel. If the kernel is spatially-invariant, then the kernel with \eqn{s} at the origin is plotted. If spatially-variant, then arrows on a regular grid over the domain are plotted. The direction of the arrow is indicative of the transport direaction at a specific location, while the length of the arrow is indicative of the transport intensity.
+#' @seealso  \code{\link{IDE}} for details on the IDE model.
+#' @examples
+#' \dontrun{
+#' SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 0)
+#' show_kernel(SIM1$IDEmodel)}
 #' @export
 show_kernel <- function(IDEmodel, scale = 1) {
+  ## Suppress bindings warning
+  m <- s1 <- s2 <- hor <- ver <- NULL
+
   kernel_basis <- IDEmodel$get("kernel_basis")
   k <- IDEmodel$get("k")
   s <- IDEmodel$get("s")
@@ -382,7 +459,6 @@ show_kernel <- function(IDEmodel, scale = 1) {
   }
 }
 
-#' @export
 constant_basis <- function() {
    new("Basis",
        manifold = plane(),
@@ -392,8 +468,26 @@ constant_basis <- function() {
        n = 1)
 }
 
+#' @title Simulate datasets from the IDE model
+#' @description Generates simulations that are then used to evaluate the fitting and prediction of an IDE model.
+#'
+#' @param T number of time points to simulate
+#' @param nobs number of observations randomly scattered in the domain and fixed for all time intervals
+#' @param k_spat_invariant flag indicating whether to simulate using a spatially-invariant kernel or a spatially-variant one
+#' @details The simulated data consider an IDE on the domain [0,1] x [0,1] that is simulated on top of a fixed effect comprising of an intercept, a linear horizontal effect, and a linear vertical effect (all with coefficients 0.2). The measurement-error variance and the variance of the additive disturbance are both 0.0001. When a spatially-invariante kernel is used, the following parameters are fixed: \eqn{\theta_{p,1} = 150}, \eqn{\theta_{p,2} = 0.002}, \eqn{\theta_{p,3} = -0.1}, and \eqn{\theta_{p,4} = 0.1}. See \code{\link{IDE}} for details on these parameters. When a spatially-varying kernel is used, \eqn{\theta_{p,1} = 200}, \eqn{\theta_{p,2} = 0.002}, and \eqn{\theta_{p,3}(s), \theta_{p,4}(s)} are mooth spatial functions simulated on the domain.
+#'
+#' @return A list containing the simulated process in \code{s_df}, the simulated data in \code{z_df}, the data as \code{STIDF} in \code{z_STIDF}, plots of the process and the observations in \code{g_truth} and \code{g_obs}, and the IDE model used to simulated the process and data in \code{IDEmodel}.
+#' @seealso \code{\link{show_kernel}} for plotting the kernel and \code{\link{IDE}}
 #' @export
+#' @examples
+#' \dontrun{
+#' SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 1)
+#' SIM2 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 0)
+#' }
+
 simIDE <- function(T = 9, nobs = 100, k_spat_invariant = 1) {
+  ## Suppress bindings warning
+  val <- s1 <- s2 <- z <- NULL
 
   set.seed(1)
   zlocs <- data.frame(s1 = runif(100),
@@ -531,7 +625,6 @@ construct_M <- function(Y_basis, s) {
   }
 }
 
-#' @export
 find_Qo <- function(Q_eta, M, niter = 100) {
   Sigma_eta <- Sigma <- chol2inv(chol(Q_eta))
   if(max(abs(eigen(M)$values)) < 1) {
@@ -547,7 +640,6 @@ find_Qo <- function(Q_eta, M, niter = 100) {
   chol2inv(chol(Sigma))
 }
 
-#' @export
 construct_Q <- function(Q_eta, M, T)
 {
   n <- nrow(Q_eta)
@@ -579,24 +671,6 @@ construct_Q <- function(Q_eta, M, T)
   return(Q)
 }
 
-#' @export
-Zeromat <- function (ni, nj = NULL)
-{
-  if (is.null(nj))
-    nj <- ni
-  return(as(sparseMatrix(i = {
-  }, j = {
-  }, dims = c(ni, nj)), "dgCMatrix"))
-}
-
-#' @export
-repcol <- function(x,n){
-  l <- lapply(1:n, function(i) x)
-  y <- do.call("c", l)
-  matrix(y, ncol = n, byrow = FALSE)
-}
-
-#' @export
 construct_kernel <- function(Basis, ki) {
   if(!is.list(Basis)) stop("Basis needs to be of class list")
   if(!all(sapply(Basis, function(x) is(x,"Basis"))))
@@ -612,66 +686,39 @@ construct_kernel <- function(Basis, ki) {
           repcol(nrow(r))
       }
       theta_s_1 <- lapply(theta_s, function(x) x[,1])
-      D <- fields::rdist(s + do.call("cbind", theta_s_1[3:(2 + ndim)]), r)
+      D <- FRK::distR(s + do.call("cbind", theta_s_1[3:(2 + ndim)]), r)
       theta_s[[1]] * exp(-D^2/theta_s[[2]])
     } else {
-      D <- fields::rdist(t(t(s) + c(ki[[3]], ki[[4]])), r)
+      D <- FRK::distR(t(t(s) + c(ki[[3]], ki[[4]])), r)
       ki[[1]] * exp(-D^2/ki[[2]])
     }
   }
 }
 
-#' @export
+
+
+Zeromat <- function (ni, nj = NULL)
+{
+  if (is.null(nj))
+    nj <- ni
+  return(as(sparseMatrix(i = {
+  }, j = {
+  }, dims = c(ni, nj)), "dgCMatrix"))
+}
+
+repcol <- function(x,n){
+  l <- lapply(1:n, function(i) x)
+  y <- do.call("c", l)
+  matrix(y, ncol = n, byrow = FALSE)
+}
+
 logdet <- function (L)
 {
   diagL <- diag(L)
   return(2 * sum(log(diagL)))
 }
 
-#' @title Densify with explicit zeroes
-#'
-#' @description This function takes two sparse matrices and returns the first matrix padded with explicit zeros so that it is at least dense (probably denser) than the second matrix. This function only works with matrices of class Matrix
-#' #'
-#' @param A object of class Matrix
-#' @param B object of class Matrix
-#' @return object of class Matrix
-#' @export
-#' @examples
-#' require(Matrix)
-#' Q1 <- sparseMatrix(i=c(1,2,2),j=c(1,1,2),x=c(0.1,0.2,1))
-#' Q2 <- sparseMatrix(i=c(1,1,2,2),j=c(1,2,1,2),x=c(0.1,0.3,0.2,1))
-#' Q1dens <- densify(Q1,Q2)
-#' Q1
-#' Q1dens
-densify <- function(A,B) {
-  ## Makes A at least as dense as B
-  As <- symb(A)
-  Bs <- symb(B)
-  delta <- as(As - Bs,"dgTMatrix")
-  idx <- which(delta@x == -1)
-  addon <- sparseMatrix(delta@i+1,delta@j+1,x=0)
-  A <- A + addon
-  A
-}
 
-#' @title Return the symbolic representation of a Matrix
-#'
-#' @description This function takes an object of class Matrix and returns the same Matrix with all elements replaced with 1
-#' #'
-#' @param A object of class Matrix
-#' @return object of class Matrix
-#' @export
-#' @examples
-#' require(Matrix)
-#' Q <- sparseMatrix(i=c(1,2,2),j=c(1,1,2),x=c(0.1,0.2,1))
-#' Qsymb <- symb(Q)
-#' Qsymb
-symb <- function(A) {
-  A@x <- rep(1,length(A@x))
-  A
-}
-
-#' @export
 vec_to_list <- function(x, k) {
   y <- list()
   count <- 1

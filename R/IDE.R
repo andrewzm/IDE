@@ -24,10 +24,10 @@
 #' @import spacetime
 #' @import parallel
 #' @import dplyr
-#' @import FRK
-#' @import DEoptim
 #' @import sparseinv
+#' @importFrom FRK distR auto_basis eval_basis nbasis plane
+#' @importFrom DEoptim DEoptim
 #' @importFrom tidyr gather spread
-#' @importFrom stats .getXlevels coefficients dist kmeans lm median model.extract model.frame model.matrix na.fail optim runif sd terms var time rnorm formula
+#' @importFrom stats .getXlevels coefficients dist kmeans lm median model.extract model.frame model.matrix na.fail optim runif sd terms var time rnorm formula coef predict
 #' @importFrom utils data
 NULL
