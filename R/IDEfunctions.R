@@ -1,6 +1,6 @@
 # IDE: An R Software package for implementing integro-difference
 # equation models
-# Copyright (c) 2017 University of Wollongong
+# Copyright (c) 2018 Andrew Zammit-Mangion
 # Author: Andrew Zammit-Mangion, azm (at) uow.edu.au
 #
 # This program is free software; you can redistribute it and/or
@@ -22,37 +22,36 @@
 #' @param data data object of class \code{STIDF}
 #' @param dt object of class \code{difftime} identifying the temporal discretisation used in the model
 #' @param process_basis object of class \code{Basis} as defined in the package \code{FRK}
-#' @param kernel_basis a list of four objects of class \code{Basis} as defined in the package \code{FRK}. The first correspondes to the spatial decomposition of the kernel amplitude, the second to the kernel aperture, the third to the kernel horizontal offset, and the fourth to the kernel vertical offset. If left \code{NULL}, a spatially-invariant kernel is assumed
+#' @param kernel_basis a list of four objects of class \code{Basis} as defined in the package \code{FRK}. The first corresponds to the spatial decomposition of the kernel amplitude, the second to the kernel aperture, the third to the kernel horizontal offset, and the fourth to the kernel vertical offset. If left \code{NULL}, a spatially-invariant kernel is assumed
 #' @param grid_size an integer identifying the number of grid points to use (in one dimension) for numerical integrations
 #' @param forecast an integer indicating the number of steps to forecast (where each step corresponds to one \code{difftime})
 #' @param hindcast an integer indicating the number of steps to hindcast (where each step corresponds to one \code{difftime})
 #' @param object object of class \code{IDE} to for fitting or predicting
-#' @param method method used to estimate the parameters. Currently only \code{"DEoptim"} is allowed, which calls a genetic algorithm from the package \code{DEoptim}
+#' @param method method used to estimate the parameters. Currently only \code{"DEoptim"} is allowed, which calls an evolution algorithm from the package \code{DEoptim}
 #' @param newdata data frame or object of class \code{STIDF} containing the spatial and temporal points at which to predict
 #' @param covariances a flag indicating whether prediction covariances should be returned or not when predicting
 #' @param ... other parameters passed to \code{DEoptim} or \code{predict}
 #' @details The first-order spatio-temporal IDE process model used in the package \code{IDE} is given by \deqn{Y_t(s) = \int_{D_s} m(s,x;\theta_p) Y_{t-1}(x) \; dx  + \eta_t(s); \;\;\; s,x \in D_s,} for \eqn{t=1,2,\ldots}, where \eqn{m(s,x;\theta_p)} is a transition kernel, depending on parameters \eqn{\theta_p} that specify ``redistribution weights'' for the process at the previous time over the spatial domain, \eqn{D_s}, and \eqn{\eta_t(s)} is a time-varying (but statistically independent in time) continuous mean-zero Gaussian spatial process.  It is assumed that the parameter vector \eqn{\theta_p} does not vary with time.  In general, \eqn{\int_{D_s} m(s,x;\theta_p) d x < 1} for the process to be stable (non-explosive) in time.
 #'
 #' The redistribution kernel \eqn{m(s,x;\theta_p)} used by the package \code{IDE} is given by \deqn{m(s,x;\theta_p) = {\theta_{p,1}(s)} \exp\left(-\frac{1}{\theta_{p,2}(s)}\left[(x_1 - \theta_{p,3}(s) - s_1)^2 + (x_2 - \theta_{p,4}(s) - s_2)^2 \right] \right),}
-#' where the spatially-varying kernel amplitude is given by \eqn{\theta_{p,1}(s)} and controls the temporal stationarity, the spatially-varying length-scale (variance) parameter \eqn{\theta_{p,2}(s)} corresponds to a kernel scale (aperture) parameter (i.e., the kernel width increases as \eqn{\theta_{p,2}} increases), and the mean (shift) parameters \eqn{\theta_{p,3}(s)} and \eqn{\theta_{p,4}(s)} correspond to a spatially-varying shift of the kernel relative to location $s$. Spatially-invariant kernels (i.e., where the elements of \eqn{\theta_p} are not functions of space) are assumed by default. The spatial dependence, if present, is modelled using a basis-function decomposition.
+#' where the spatially-varying kernel amplitude is given by \eqn{\theta_{p,1}(s)} and controls the temporal stationarity, the spatially-varying length-scale (variance) parameter \eqn{\theta_{p,2}(s)} corresponds to a kernel scale (aperture) parameter (i.e., the kernel width increases as \eqn{\theta_{p,2}} increases), and the mean (shift) parameters \eqn{\theta_{p,3}(s)} and \eqn{\theta_{p,4}(s)} correspond to a spatially-varying shift of the kernel relative to location \eqn{s}. Spatially-invariant kernels (i.e., where the elements of \eqn{\theta_p} are not functions of space) are assumed by default. The spatial dependence, if present, is modelled using a basis-function decomposition.
 #'
-#'\code{IDE.fit()} takes an object of class \code{IDE} and estimates all unknown parameters, namely the parameters \eqn{theta} and the measurement-error variance, using maximum likelihood. The only method currently used is the genetic algorithm in the package \code{DEoptim}. This has been seen to work well on several simulation and real-application studies on multi-core machines.
+#'\code{IDE.fit()} takes an object of class \code{IDE} and estimates all unknown parameters, namely the parameters \eqn{\theta_p} and the measurement-error variance, using maximum likelihood. The only method currently used is the genetic algorithm in the package \code{DEoptim}. This has been seen to work well on several simulation and real-application studies on multi-core machines.
 #'
-#'Once the parameters are fitted, the \code{IDE} object is passed onto the function \code{predict()} in order to carry out optimal predictions over some prediction spatio-temporal locations. If no locations are specified, the spatial grid used for discretising the integral at every time point in the data horizon are used. The function \code{predict} returns a data frame in long format. Change-of-support is currently no supported.
-#' @return Object of class \code{IDE} that contains \code{get} and \code{set} functions for retrieving and setting internal parameters, the function \code{update_alpha} which predicts the latent states, \code{update_beta} which estimates the regresson coefficients based on the current predictions for alpha, and \code{negloglik}, which computes the negative log-likelihood.
+#'Once the parameters are fitted, the \code{IDE} object is passed onto the function \code{predict()} in order to carry out optimal predictions over some prediction spatio-temporal locations. If no locations are specified, the spatial grid used for discretising the integral at every time point in the data horizon are used. The function \code{predict} returns a data frame in long format. Change-of-support is currently not supported.
+#' @return Object of class \code{IDE} that contains \code{get} and \code{set} functions for retrieving and setting internal parameters, the function \code{update_alpha} which predicts the latent states, \code{update_beta} which estimates the regression coefficients based on the current predictions for \code{alpha}, and \code{negloglik}, which computes the negative log-likelihood.
 #' @seealso \code{\link{show_kernel}} for plotting the kernel
 #' @export
 #' @examples
-#' \dontrun{
-#' SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 1)
+#' SIM1 <- simIDE(T = 5, nobs = 100, k_spat_invariant = 1)
 #' IDEmodel <- IDE(f = z ~ s1 + s2,
 #'                 data = SIM1$z_STIDF,
 #'                 dt = as.difftime(1, units = "days"),
 #'                 grid_size = 41)
+#' \donttest{
 #' fit_results_sim1 <- fit.IDE(IDEmodel,
 #'                             parallelType = 1)
-#' ST_grid_df <- predict(fit_results_sim1$IDEmodel)
-#' }
+#' ST_grid_df <- predict(fit_results_sim1$IDEmodel)}
 IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_size = 41, forecast = 0, hindcast = 0) {
 
   if(!is(f,"formula"))
@@ -394,7 +393,7 @@ predict.IDE <- function(object, newdata = NULL, covariances = FALSE, ...) {
 #' @method coef IDE
 #' @seealso \code{\link{IDE}} for more information on how to construct and fit an IDE model.
 #' @examples
-#' SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 1)
+#' SIM1 <- simIDE(T = 5, nobs = 100, k_spat_invariant = 1)
 #' coef(SIM1$IDEmodel)
 coef.IDE <- function(object, ...) {
   coeff <- as.numeric(object$get("betahat"))
@@ -411,12 +410,11 @@ coef.IDE <- function(object, ...) {
 #' @description Plotting function for visualising the IDE kernel.
 #' @param IDEmodel object of class \code{IDE}
 #' @param scale factor by which to scale the arrows when visualising a spatially-varying kernel
-#' @details The function \code{show_kernel} adapts its behaviour to the type of kernel. If the kernel is spatially-invariant, then the kernel with \eqn{s} at the origin is plotted. If spatially-variant, then arrows on a regular grid over the domain are plotted. The direction of the arrow is indicative of the transport direaction at a specific location, while the length of the arrow is indicative of the transport intensity.
+#' @details The function \code{show_kernel} adapts its behaviour to the type of kernel. If the kernel is spatially-invariant, then the kernel with \eqn{s} evaluated at the origin is plotted. If spatially-variant, then arrows on a regular grid over the domain are plotted. The direction of the arrow is indicative of the transport direction at a specific location, while the length of the arrow is indicative of the transport intensity.
 #' @seealso  \code{\link{IDE}} for details on the IDE model.
 #' @examples
-#' \dontrun{
-#' SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 0)
-#' show_kernel(SIM1$IDEmodel)}
+#' SIM1 <- simIDE(T = 5, nobs = 100, k_spat_invariant = 0)
+#' \donttest{show_kernel(SIM1$IDEmodel)}
 #' @export
 show_kernel <- function(IDEmodel, scale = 1) {
   ## Suppress bindings warning
@@ -480,16 +478,14 @@ constant_basis <- function() {
 #' @param T number of time points to simulate
 #' @param nobs number of observations randomly scattered in the domain and fixed for all time intervals
 #' @param k_spat_invariant flag indicating whether to simulate using a spatially-invariant kernel or a spatially-variant one
-#' @details The simulated data consider an IDE on the domain [0,1] x [0,1] that is simulated on top of a fixed effect comprising of an intercept, a linear horizontal effect, and a linear vertical effect (all with coefficients 0.2). The measurement-error variance and the variance of the additive disturbance are both 0.0001. When a spatially-invariante kernel is used, the following parameters are fixed: \eqn{\theta_{p,1} = 150}, \eqn{\theta_{p,2} = 0.002}, \eqn{\theta_{p,3} = -0.1}, and \eqn{\theta_{p,4} = 0.1}. See \code{\link{IDE}} for details on these parameters. When a spatially-varying kernel is used, \eqn{\theta_{p,1} = 200}, \eqn{\theta_{p,2} = 0.002}, and \eqn{\theta_{p,3}(s), \theta_{p,4}(s)} are mooth spatial functions simulated on the domain.
+#' @details The domain considered is [0,1] x [0,1], and an IDE is simulated on top of a fixed effect comprising of an intercept, a linear horizontal effect, and a linear vertical effect (all with coefficients 0.2). The measurement-error variance and the variance of the additive disturbance are both 0.0001. When a spatially-invariant kernel is used, the following parameters are fixed: \eqn{\theta_{p,1} = 150}, \eqn{\theta_{p,2} = 0.002}, \eqn{\theta_{p,3} = -0.1}, and \eqn{\theta_{p,4} = 0.1}. See \code{\link{IDE}} for details on these parameters. When a spatially-varying kernel is used, \eqn{\theta_{p,1} = 200}, \eqn{\theta_{p,2} = 0.002}, and \eqn{\theta_{p,3}(s), \theta_{p,4}(s)} are smooth spatial functions simulated on the domain.
 #'
-#' @return A list containing the simulated process in \code{s_df}, the simulated data in \code{z_df}, the data as \code{STIDF} in \code{z_STIDF}, plots of the process and the observations in \code{g_truth} and \code{g_obs}, and the IDE model used to simulated the process and data in \code{IDEmodel}.
+#' @return A list containing the simulated process in \code{s_df}, the simulated data in \code{z_df}, the data as \code{STIDF} in \code{z_STIDF}, plots of the process and the observations in \code{g_truth} and \code{g_obs}, and the IDE model used to simulate the process and data in \code{IDEmodel}.
 #' @seealso \code{\link{show_kernel}} for plotting the kernel and \code{\link{IDE}}
 #' @export
 #' @examples
-#' \dontrun{
-#' SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 1)
-#' SIM2 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 0)
-#' }
+#' SIM1 <- simIDE(T = 5, nobs = 100, k_spat_invariant = 1)
+#' SIM2 <- simIDE(T = 5, nobs = 100, k_spat_invariant = 0)
 
 simIDE <- function(T = 9, nobs = 100, k_spat_invariant = 1) {
   ## Suppress bindings warning
@@ -658,21 +654,21 @@ construct_Q <- function(Q_eta, M, T)
 
   for (i in 0:(T - 3)) {
     if (i == 0) {
-      Q <- cBind(-QM, MtQM, -MtQ, Zeromat(n, ((T - 3) - i) *
+      Q <- cbind(-QM, MtQM, -MtQ, Zeromat(n, ((T - 3) - i) *
                                             n))
     }
     else if (i == (T - 3)) {
-      Q <- rBind(Q, cBind(Zeromat(n, n * i), -QM, MtQM,
+      Q <- rbind(Q, cbind(Zeromat(n, n * i), -QM, MtQM,
                           -MtQ))
     }
     else {
-      Q <- rBind(Q, cBind(Zeromat(n, n * i), -QM, MtQM,
+      Q <- rbind(Q, cbind(Zeromat(n, n * i), -QM, MtQM,
                           -MtQ, Zeromat(n, ((T - 3) - i) * n)))
     }
   }
-  Q <- rBind(cBind(Qo, -MtQ, Zeromat(n, (T - 2) * n)),
+  Q <- rbind(cbind(Qo, -MtQ, Zeromat(n, (T - 2) * n)),
              Q,
-             cBind(Zeromat(n, n *(T - 2)), -QM, Q_eta))
+             cbind(Zeromat(n, n *(T - 2)), -QM, Q_eta))
   #tryCatch({ chol(Q)},error=function(e) {browser()})
   return(Q)
 }

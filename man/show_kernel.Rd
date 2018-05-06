@@ -15,12 +15,11 @@ show_kernel(IDEmodel, scale = 1)
 Plotting function for visualising the IDE kernel.
 }
 \details{
-The function \code{show_kernel} adapts its behaviour to the type of kernel. If the kernel is spatially-invariant, then the kernel with \eqn{s} at the origin is plotted. If spatially-variant, then arrows on a regular grid over the domain are plotted. The direction of the arrow is indicative of the transport direaction at a specific location, while the length of the arrow is indicative of the transport intensity.
+The function \code{show_kernel} adapts its behaviour to the type of kernel. If the kernel is spatially-invariant, then the kernel with \eqn{s} evaluated at the origin is plotted. If spatially-variant, then arrows on a regular grid over the domain are plotted. The direction of the arrow is indicative of the transport direction at a specific location, while the length of the arrow is indicative of the transport intensity.
 }
 \examples{
-\dontrun{
-SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 0)
-show_kernel(SIM1$IDEmodel)}
+SIM1 <- simIDE(T = 5, nobs = 100, k_spat_invariant = 0)
+\donttest{show_kernel(SIM1$IDEmodel)}
 }
 \seealso{
 \code{\link{IDE}} for details on the IDE model.

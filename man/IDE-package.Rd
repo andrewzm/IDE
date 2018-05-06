@@ -5,5 +5,5 @@
 \alias{IDE-package}
 \title{Integro-difference equation}
 \description{
-Integro-difference equation
+The Integro-Difference Equation model is a linear, dynamical model used to model phenomena that evolve in space and in time. At the heart of the model is the kernel, which dictates how the process evolves from one time point to the next. Both process and parameter reduction are used to facilitate computation, and spatially-varying kernels are allowed. Data used to estimate the parameters are assumed to be readings of the process corrupted by Gaussian measurement error. Parameters are fitted by maximum likelihood,  and estimation is carried out using an evolution algorithm.
 }

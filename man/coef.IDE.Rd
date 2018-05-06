@@ -15,7 +15,7 @@
 Takes a an object of class \code{IDE} and returns a numeric vector with the estimated regression coefficients.
 }
 \examples{
-SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 1)
+SIM1 <- simIDE(T = 5, nobs = 100, k_spat_invariant = 1)
 coef(SIM1$IDEmodel)
 }
 \seealso{

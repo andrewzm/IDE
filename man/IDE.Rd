@@ -22,7 +22,7 @@ fit.IDE(object, method = "DEoptim", ...)
 
 \item{process_basis}{object of class \code{Basis} as defined in the package \code{FRK}}
 
-\item{kernel_basis}{a list of four objects of class \code{Basis} as defined in the package \code{FRK}. The first correspondes to the spatial decomposition of the kernel amplitude, the second to the kernel aperture, the third to the kernel horizontal offset, and the fourth to the kernel vertical offset. If left \code{NULL}, a spatially-invariant kernel is assumed}
+\item{kernel_basis}{a list of four objects of class \code{Basis} as defined in the package \code{FRK}. The first corresponds to the spatial decomposition of the kernel amplitude, the second to the kernel aperture, the third to the kernel horizontal offset, and the fourth to the kernel vertical offset. If left \code{NULL}, a spatially-invariant kernel is assumed}
 
 \item{grid_size}{an integer identifying the number of grid points to use (in one dimension) for numerical integrations}
 
@@ -32,7 +32,7 @@ fit.IDE(object, method = "DEoptim", ...)
 
 \item{object}{object of class \code{IDE} to for fitting or predicting}
 
-\item{method}{method used to estimate the parameters. Currently only \code{"DEoptim"} is allowed, which calls a genetic algorithm from the package \code{DEoptim}}
+\item{method}{method used to estimate the parameters. Currently only \code{"DEoptim"} is allowed, which calls an evolution algorithm from the package \code{DEoptim}}
 
 \item{...}{other parameters passed to \code{DEoptim} or \code{predict}}
 
@@ -41,7 +41,7 @@ fit.IDE(object, method = "DEoptim", ...)
 \item{covariances}{a flag indicating whether prediction covariances should be returned or not when predicting}
 }
 \value{
-Object of class \code{IDE} that contains \code{get} and \code{set} functions for retrieving and setting internal parameters, the function \code{update_alpha} which predicts the latent states, \code{update_beta} which estimates the regresson coefficients based on the current predictions for alpha, and \code{negloglik}, which computes the negative log-likelihood.
+Object of class \code{IDE} that contains \code{get} and \code{set} functions for retrieving and setting internal parameters, the function \code{update_alpha} which predicts the latent states, \code{update_beta} which estimates the regression coefficients based on the current predictions for \code{alpha}, and \code{negloglik}, which computes the negative log-likelihood.
 }
 \description{
 The integro-difference equation (IDE) model is constructed using the function \code{IDE}, fitted using the function \code{IDE.fit} and used for prediction using the function \code{predict}.
@@ -50,23 +50,22 @@ The integro-difference equation (IDE) model is constructed using the function \c
 The first-order spatio-temporal IDE process model used in the package \code{IDE} is given by \deqn{Y_t(s) = \int_{D_s} m(s,x;\theta_p) Y_{t-1}(x) \; dx  + \eta_t(s); \;\;\; s,x \in D_s,} for \eqn{t=1,2,\ldots}, where \eqn{m(s,x;\theta_p)} is a transition kernel, depending on parameters \eqn{\theta_p} that specify ``redistribution weights'' for the process at the previous time over the spatial domain, \eqn{D_s}, and \eqn{\eta_t(s)} is a time-varying (but statistically independent in time) continuous mean-zero Gaussian spatial process.  It is assumed that the parameter vector \eqn{\theta_p} does not vary with time.  In general, \eqn{\int_{D_s} m(s,x;\theta_p) d x < 1} for the process to be stable (non-explosive) in time.
 
 The redistribution kernel \eqn{m(s,x;\theta_p)} used by the package \code{IDE} is given by \deqn{m(s,x;\theta_p) = {\theta_{p,1}(s)} \exp\left(-\frac{1}{\theta_{p,2}(s)}\left[(x_1 - \theta_{p,3}(s) - s_1)^2 + (x_2 - \theta_{p,4}(s) - s_2)^2 \right] \right),}
-where the spatially-varying kernel amplitude is given by \eqn{\theta_{p,1}(s)} and controls the temporal stationarity, the spatially-varying length-scale (variance) parameter \eqn{\theta_{p,2}(s)} corresponds to a kernel scale (aperture) parameter (i.e., the kernel width increases as \eqn{\theta_{p,2}} increases), and the mean (shift) parameters \eqn{\theta_{p,3}(s)} and \eqn{\theta_{p,4}(s)} correspond to a spatially-varying shift of the kernel relative to location $s$. Spatially-invariant kernels (i.e., where the elements of \eqn{\theta_p} are not functions of space) are assumed by default. The spatial dependence, if present, is modelled using a basis-function decomposition.
+where the spatially-varying kernel amplitude is given by \eqn{\theta_{p,1}(s)} and controls the temporal stationarity, the spatially-varying length-scale (variance) parameter \eqn{\theta_{p,2}(s)} corresponds to a kernel scale (aperture) parameter (i.e., the kernel width increases as \eqn{\theta_{p,2}} increases), and the mean (shift) parameters \eqn{\theta_{p,3}(s)} and \eqn{\theta_{p,4}(s)} correspond to a spatially-varying shift of the kernel relative to location \eqn{s}. Spatially-invariant kernels (i.e., where the elements of \eqn{\theta_p} are not functions of space) are assumed by default. The spatial dependence, if present, is modelled using a basis-function decomposition.
 
-\code{IDE.fit()} takes an object of class \code{IDE} and estimates all unknown parameters, namely the parameters \eqn{theta} and the measurement-error variance, using maximum likelihood. The only method currently used is the genetic algorithm in the package \code{DEoptim}. This has been seen to work well on several simulation and real-application studies on multi-core machines.
+\code{IDE.fit()} takes an object of class \code{IDE} and estimates all unknown parameters, namely the parameters \eqn{\theta_p} and the measurement-error variance, using maximum likelihood. The only method currently used is the genetic algorithm in the package \code{DEoptim}. This has been seen to work well on several simulation and real-application studies on multi-core machines.
 
-Once the parameters are fitted, the \code{IDE} object is passed onto the function \code{predict()} in order to carry out optimal predictions over some prediction spatio-temporal locations. If no locations are specified, the spatial grid used for discretising the integral at every time point in the data horizon are used. The function \code{predict} returns a data frame in long format. Change-of-support is currently no supported.
+Once the parameters are fitted, the \code{IDE} object is passed onto the function \code{predict()} in order to carry out optimal predictions over some prediction spatio-temporal locations. If no locations are specified, the spatial grid used for discretising the integral at every time point in the data horizon are used. The function \code{predict} returns a data frame in long format. Change-of-support is currently not supported.
 }
 \examples{
-\dontrun{
-SIM1 <- simIDE(T = 10, nobs = 100, k_spat_invariant = 1)
+SIM1 <- simIDE(T = 5, nobs = 100, k_spat_invariant = 1)
 IDEmodel <- IDE(f = z ~ s1 + s2,
                 data = SIM1$z_STIDF,
                 dt = as.difftime(1, units = "days"),
                 grid_size = 41)
+\donttest{
 fit_results_sim1 <- fit.IDE(IDEmodel,
                             parallelType = 1)
-ST_grid_df <- predict(fit_results_sim1$IDEmodel)
-}
+ST_grid_df <- predict(fit_results_sim1$IDEmodel)}
 }
 \seealso{
 \code{\link{show_kernel}} for plotting the kernel

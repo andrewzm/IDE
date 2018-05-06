@@ -123,7 +123,7 @@
 
 \bibliographystyle{plainnat}
 
-\title{Spatio-temporal IDE modelling: The \tt{R} package}
+\title{Spatio-temporal integro-difference equation (IDE) modelling: The \tt{R} package}
 \author{Andrew Zammit-Mangion}
 %\author[1]{Noel Cressie}
 %\affiliation{National Institute for Applied Statistics Research Australia~(NIASRA), School of Mathematics and Applied Statistics, University of Wollongong, New South Wales 2522, Australia}
@@ -142,8 +142,7 @@ knitr::opts_chunk$set(dpi=100, eval = FALSE)
 
 \maketitle
 
-
-In this vignette we use the package {\bf IDE} to fit spatio-temporal IDE models, as well as predict and forecast from spatio-temporal data. We will explore two cases using simulated data where the true model is known. For this vignette, we need the following packages:
+In this vignette we use the package {\bf IDE} to fit spatio-temporal integro-difference equation (IDE) models, as well as predict and forecast from spatio-temporal data. We will explore two cases using simulated data where the true model is known. For this vignette, we need the following packages:
 
 <<warning = FALSE, message = FALSE>>=
 library("dplyr")
@@ -364,7 +363,7 @@ fit_results_sim2 <- fit.IDE(IDEmodel,
 <<eval = FALSE>>=
 show_kernel(fit_results_sim2$IDEmodel)
 @
-\noindent and the true and fitted spatially-varying drift parameters are shown side by side in Figure~\ref{fig:Sim2kernels}. Note how the fitted drifts capture the broad directions and magnitudes of the true model. Predictions and prediction standard errors can be obtained and visualized using \fn{predict} as above. This is left as an exercise for the reader.
+\noindent and the true and fitted spatially-varying drift parameters are shown side by side in Figure~\ref{fig:Sim2kernels}. Note how the fitted drifts capture the broad directions and magnitudes of the true model. Predictions and prediction standard errors can be obtained and visualized using \fn{predict} as above.
 
 \begin{figure}[t!]
 \begin{center}

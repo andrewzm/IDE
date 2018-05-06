@@ -1,6 +1,6 @@
 # IDE: An R Software package for implementing integro-difference
 # equation models
-# Copyright (c) 2017 University of Wollongong
+# Copyright (c) 2018 Andrew Zammit-Mangion
 # Author: Andrew Zammit-Mangion, azm (at) uow.edu.au
 #
 # This program is free software; you can redistribute it and/or
@@ -12,9 +12,10 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+#'
 #' Integro-difference equation
 #'
+#' The Integro-Difference Equation model is a linear, dynamical model used to model phenomena that evolve in space and in time. At the heart of the model is the kernel, which dictates how the process evolves from one time point to the next. Both process and parameter reduction are used to facilitate computation, and spatially-varying kernels are allowed. Data used to estimate the parameters are assumed to be readings of the process corrupted by Gaussian measurement error. Parameters are fitted by maximum likelihood,  and estimation is carried out using an evolution algorithm.
 #' @name IDE-package
 #' @docType package
 #' @import methods
