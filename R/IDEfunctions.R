@@ -359,11 +359,11 @@ predict.IDE <- function(object, newdata = NULL, covariances = FALSE, ...) {
     }
     PHI_pred <- do.call("bdiag", PHI_pred_1)
   }
-  if(is(newdata, "ST")) {
-    newdata[[all.vars(f)[1]]] <- 0            # dummy data
-  } else {
-    newdata[all.vars(f)[1]] <- 0            # dummy data
-  }
+  # if(is(newdata, "ST")) {
+  #   newdata[[all.vars(f)[1]]] <- 0            # dummy data
+  # } else {
+  #   newdata[all.vars(f)[1]] <- 0            # dummy data
+  # }
   X_pred <- model.matrix(f, newdata)
   newdata$Ypred <- (X_pred %*% betahat + PHI_pred %*% alphahat) %>% as.numeric()
   Qpost_dense <- densify(Qpost,t(PHI_pred) %*% PHI_pred)
