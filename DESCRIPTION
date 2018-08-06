@@ -1,7 +1,7 @@
 Package: IDE
 Type: Package
 Title: Integro-Difference Equation Spatio-Temporal Models
-Version: 0.1.0
+Version: 0.2.0
 Date: 2018-05-03
 Authors@R: c(
     person("Andrew", "Zammit-Mangion", , "andrewzm@gmail.com", c("aut", "cre")))
