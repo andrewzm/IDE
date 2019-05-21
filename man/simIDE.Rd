@@ -4,7 +4,7 @@
 \alias{simIDE}
 \title{Simulate datasets from the IDE model}
 \usage{
-simIDE(T = 9, nobs = 100, k_spat_invariant = 1)
+simIDE(T = 9, nobs = 100, k_spat_invariant = 1, IDEmodel = NULL)
 }
 \arguments{
 \item{T}{number of time points to simulate}
@@ -12,6 +12,8 @@ simIDE(T = 9, nobs = 100, k_spat_invariant = 1)
 \item{nobs}{number of observations randomly scattered in the domain and fixed for all time intervals}
 
 \item{k_spat_invariant}{flag indicating whether to simulate using a spatially-invariant kernel or a spatially-variant one}
+
+\item{IDEmodel}{object of class IDE to simulate form (optional)}
 }
 \value{
 A list containing the simulated process in \code{s_df}, the simulated data in \code{z_df}, the data as \code{STIDF} in \code{z_STIDF}, plots of the process and the observations in \code{g_truth} and \code{g_obs}, and the IDE model used to simulate the process and data in \code{IDEmodel}.

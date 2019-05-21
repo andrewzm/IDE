@@ -258,15 +258,21 @@ IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_siz
 
 #' @export
 #' @rdname IDE
-fit.IDE <- function(object, method = "DEoptim", ...) {
+fit.IDE <- function(object, method = "DEoptim", fix = list(), ...) {
 
   ## Optimise log likelihood
-  optimfun <- function(theta, IDEmodel) {
+  optimfun <- function(theta, IDEmodel, fix = list()) {
     nk <- IDEmodel$get("nk")
     p <- length(theta)
-    sigma2_eps <- exp(theta[p-1])
+    if(!is.null(fix$sigma2_eps)) {
+      sigma2_eps <- fix$sigma2_eps
+      nsigma2 <- 1
+    } else {
+      sigma2_eps <- exp(theta[p-1])
+      nsigma2 <- 2
+    }
     sigma2_eta <- exp(theta[p])
-    ki <- theta[1:(p-2)]
+    ki <- theta[1:(p-nsigma2)]
     ki <- vec_to_list(ki, nk)
     ki[[1]] <- ki[[1]]*1000
     ki[[2]] <- exp(ki[[2]]*10)
@@ -285,12 +291,19 @@ fit.IDE <- function(object, method = "DEoptim", ...) {
               rep(log(P$k2[1])/10, nk[2]),
               rep(P$k3[1], nk[3]),
               rep(P$k4[1], nk[4]),
-              log(P$sigma2_eps[1]), log(P$sigma2_eta[1]))
+              log(P$sigma2_eps[1]),
+              log(P$sigma2_eta[1]))
     upper = c(rep(P$k1[2]/1000, nk[1]),
               rep(log(P$k2[2])/10, nk[2]),
               rep(P$k3[2], nk[3]),
               rep(P$k4[2], nk[4]),
-              log(P$sigma2_eps[2]), log(P$sigma2_eta[2]))
+              log(P$sigma2_eps[2]),
+              log(P$sigma2_eta[2]))
+
+    if(!is.null(fix$sigma2_eps)) {
+      lower <- lower[-(length(lower) - 1)]
+      upper <- upper[-(length(upper) - 1)]
+    }
 
     ## Bring functions into local environment for DEoptim
     O <- DEoptim(fn = optimfun,
@@ -298,7 +311,8 @@ fit.IDE <- function(object, method = "DEoptim", ...) {
                  upper = upper,
                  control = c(list(packages = c("Matrix","FRK",
                                                "sp", "dplyr", "IDE")),...),
-                 IDEmodel = object)
+                 IDEmodel = object,
+                 fix = fix)
     theta <- O$optim$bestmem
   } else {
     stop("Only DEoptim implemented for now")
@@ -306,9 +320,15 @@ fit.IDE <- function(object, method = "DEoptim", ...) {
 
   nk <- object$get("nk")
   p <- length(theta)
-  sigma2_eps <- exp(theta[p-1])
+  if(!is.null(fix$sigma2_eps)) {
+    sigma2_eps <- fix$sigma2_eps
+    nsigma2 <- 1
+  } else {
+    sigma2_eps <- exp(theta[p-1])
+    nsigma2 <- 2
+  }
   sigma2_eta <- exp(theta[p])
-  ki <- theta[1:(p-2)]
+  ki <- theta[1:(p - nsigma2)]
   ki <- vec_to_list(ki, nk)
   ki[[1]] <- ki[[1]]*1000
   ki[[2]] <- exp(ki[[2]]*10)
@@ -348,6 +368,7 @@ predict.IDE <- function(object, newdata = NULL, covariances = FALSE, ...) {
       stop("Prediction times not a subset of modelled predictions. Please use
            forecast and hindcast arguments in IDE if you wish to predict outside
            the time horizon of the data")
+
     PHI_pred_1 <- list()
     for(i in seq_along(time_points)) {
       newdata_1 <- subset(newdata, time(newdata) == time_points[i])
@@ -359,11 +380,11 @@ predict.IDE <- function(object, newdata = NULL, covariances = FALSE, ...) {
     }
     PHI_pred <- do.call("bdiag", PHI_pred_1)
   }
-  # if(is(newdata, "ST")) {
-  #   newdata[[all.vars(f)[1]]] <- 0            # dummy data
-  # } else {
-  #   newdata[all.vars(f)[1]] <- 0            # dummy data
-  # }
+  if(is(newdata, "ST")) {
+    newdata[[all.vars(f)[1]]] <- 0            # dummy data
+  } else {
+    newdata[all.vars(f)[1]] <- 0            # dummy data
+  }
   X_pred <- model.matrix(f, newdata)
   newdata$Ypred <- (X_pred %*% betahat + PHI_pred %*% alphahat) %>% as.numeric()
   Qpost_dense <- densify(Qpost,t(PHI_pred) %*% PHI_pred)
@@ -478,6 +499,7 @@ constant_basis <- function() {
 #' @param T number of time points to simulate
 #' @param nobs number of observations randomly scattered in the domain and fixed for all time intervals
 #' @param k_spat_invariant flag indicating whether to simulate using a spatially-invariant kernel or a spatially-variant one
+#' @param IDEmodel object of class IDE to simulate form (optional)
 #' @details The domain considered is [0,1] x [0,1], and an IDE is simulated on top of a fixed effect comprising of an intercept, a linear horizontal effect, and a linear vertical effect (all with coefficients 0.2). The measurement-error variance and the variance of the additive disturbance are both 0.0001. When a spatially-invariant kernel is used, the following parameters are fixed: \eqn{\theta_{p,1} = 150}, \eqn{\theta_{p,2} = 0.002}, \eqn{\theta_{p,3} = -0.1}, and \eqn{\theta_{p,4} = 0.1}. See \code{\link{IDE}} for details on these parameters. When a spatially-varying kernel is used, \eqn{\theta_{p,1} = 200}, \eqn{\theta_{p,2} = 0.002}, and \eqn{\theta_{p,3}(s), \theta_{p,4}(s)} are smooth spatial functions simulated on the domain.
 #'
 #' @return A list containing the simulated process in \code{s_df}, the simulated data in \code{z_df}, the data as \code{STIDF} in \code{z_STIDF}, plots of the process and the observations in \code{g_truth} and \code{g_obs}, and the IDE model used to simulate the process and data in \code{IDEmodel}.
@@ -489,7 +511,7 @@ constant_basis <- function() {
 
 simIDE <- function(T = 9, nobs = 100, k_spat_invariant = 1, IDEmodel = NULL) {
   ## Suppress bindings warning
-  val <- s1 <- s2 <- z <- NULL
+  timeind <- val <- s1 <- s2 <- z <- NULL
 
   if(is.null(IDEmodel)) {
 
@@ -720,6 +742,7 @@ construct_Q <- function(Q_eta, M, T)
              Q,
              cbind(Zeromat(n, n *(T - 2)), -QM, Q_eta))
   #tryCatch({ chol(Q)},error=function(e) {browser()})
+  Q <- as(Q, "dgCMatrix")
   return(Q)
 }
 
