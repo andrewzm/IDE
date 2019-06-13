@@ -472,6 +472,7 @@ show_kernel <- function(IDEmodel, scale = 1) {
         geom_segment(aes(xend=s1-hor*scale, yend=s2-ver*scale),
                      colour = "black", size = 0.2,
                      arrow = arrow(length = unit(0.1,"cm"))) +
+        xlab(names(s$s_grid_df)[1]) + ylab(names(s$s_grid_df)[2]) +
         theme_bw()
     } else {
       stop("Plotting only implemented for 2D spatial fields")
