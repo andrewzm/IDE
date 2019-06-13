@@ -466,6 +466,8 @@ show_kernel <- function(IDEmodel, scale = 1) {
     if(ndim == 2) {
       s$s_grid_df$hor <-  eval_basis(kernel_basis[[3]],s$s_grid_mat) %*% k[[3]] %>% as.numeric()
       s$s_grid_df$ver <-  eval_basis(kernel_basis[[4]],s$s_grid_mat) %*% k[[4]] %>% as.numeric()
+      s$s_grid_df$s1 <- s$s_grid_df[,1]
+      s$s_grid_df$s2 <- s$s_grid_df[,2]
       ggplot(data=s$s_grid_df, aes(x=s1, y=s2)) +
         geom_segment(aes(xend=s1-hor*scale, yend=s2-ver*scale),
                      colour = "black", size = 0.2,
