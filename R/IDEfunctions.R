@@ -213,7 +213,8 @@ IDE <- function(f, data, dt, process_basis = NULL, kernel_basis = NULL, grid_siz
     stop("Data time points need to be equidistant on chose time interval")
   T <- length(time_points)
 
-  Z <- data[["z"]]
+  depvar_name <- all.vars(f)[1]
+  Z <- data[[depvar_name]]
   PHI_obs_list <- lapply(1:T, function(i) {
     if(any(time(data) %in% time_points[i])) {
       eval_basis(process_basis, coordinates(data[,time_points[i]]))
