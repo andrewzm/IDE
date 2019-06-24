@@ -9,7 +9,7 @@
 IDE(f, data, dt, process_basis = NULL, kernel_basis = NULL,
   grid_size = 41, forecast = 0, hindcast = 0)
 
-fit.IDE(object, method = "DEoptim", ...)
+fit.IDE(object, method = "DEoptim", fix = list(), ...)
 
 \method{predict}{IDE}(object, newdata = NULL, covariances = FALSE, ...)
 }
@@ -33,6 +33,8 @@ fit.IDE(object, method = "DEoptim", ...)
 \item{object}{object of class \code{IDE} to for fitting or predicting}
 
 \item{method}{method used to estimate the parameters. Currently only \code{"DEoptim"} is allowed, which calls an evolution algorithm from the package \code{DEoptim}}
+
+\item{fix}{list of parameters which are fixed and not estimated (e.g., \code{list(sigma2_eps = 0.01)}). Currently only the measurement-error variance (\code{sigma2_eps}) can be fixed}
 
 \item{...}{other parameters passed to \code{DEoptim} or \code{predict}}
 

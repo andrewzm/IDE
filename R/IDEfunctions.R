@@ -28,6 +28,7 @@
 #' @param hindcast an integer indicating the number of steps to hindcast (where each step corresponds to one \code{difftime})
 #' @param object object of class \code{IDE} to for fitting or predicting
 #' @param method method used to estimate the parameters. Currently only \code{"DEoptim"} is allowed, which calls an evolution algorithm from the package \code{DEoptim}
+#' @param fix list of parameters which are fixed and not estimated (e.g., \code{list(sigma2_eps = 0.01)}). Currently only the measurement-error variance (\code{sigma2_eps}) can be fixed
 #' @param newdata data frame or object of class \code{STIDF} containing the spatial and temporal points at which to predict
 #' @param covariances a flag indicating whether prediction covariances should be returned or not when predicting
 #' @param ... other parameters passed to \code{DEoptim} or \code{predict}
